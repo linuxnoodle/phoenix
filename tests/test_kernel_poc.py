@@ -243,6 +243,8 @@ class RecoveryImageTests(unittest.TestCase):
         words = image.full_cmdline.split()
         for word in recovery_image.DIRECT + recovery_image.DIRECT_ONESHOT:
             self.assertIn(word, words)
+        # The display pipes stay with the planes, so that DisplayPort has one beside the panels.
+        self.assertIn("msm.dpu_use_planar_cac=0", words)
         # The kernel's own words of the base stay; stage 1's and Android's go.
         self.assertIn("loop.max_part=7", words)
         self.assertFalse([w for w in words if w.startswith(("pico4.test_run", "pico4.part", "pico4.modules"))])

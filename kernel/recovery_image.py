@@ -90,7 +90,10 @@ EXTRA = (
 #: --direct: the kernel's own words of EXTRA (stage 1 reads the pico4. ones) and the root: the system
 #: image in super, read-only, waited for at most 20 s (then a panic, and panic=5 reboots), its
 #: preinit as the first process. pico4.root=installed and pico4.autoreboot=0 tell the system's units
-#: that this is the installed system, not a test run with deadlines.
+#: that this is the installed system, not a test run with deadlines. msm.dpu_use_planar_cac=0 leaves
+#: the display pipes to the planes: Valve's planar CAC (the hardware's chromatic aberration
+#: correction, which nothing on the PICO 4 uses) reserves six of the eight at boot, and the panels'
+#: plane takes the other two, so a monitor on the USB-C port's DisplayPort would get none.
 DIRECT = (
     "clk_ignore_unused",
     "pd_ignore_unused",
@@ -103,6 +106,7 @@ DIRECT = (
     "init=/usr/libexec/pico4/preinit",
     "pico4.root=installed",
     "pico4.autoreboot=0",
+    "msm.dpu_use_planar_cac=0",
 )
 #: --direct in recovery: preinit's reboot after a failed start is a plain one, into boot.
 DIRECT_ONESHOT = ("pico4.failover=reboot",)

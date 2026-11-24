@@ -72,6 +72,8 @@ to PICO OS is part of it.
 | Battery and charging | ✅ | Plugged in while off, the lenses show the battery; USB PD chargers at up to 9 V |
 | Sleep | ✅ | |
 | Battery life | ❔ | Not measured yet ([#31](https://github.com/overpressure/phoenix/issues/31)) |
+| USB-C docks and hubs | ✅ | The headset charges through the dock; USB 2 and USB 3 devices and the dock's Ethernet work |
+| Monitor over USB-C | 🟡 | A monitor on a dock's HDMI is detected, but nothing shows on it yet, as on the Steam Frame ([#42](https://github.com/overpressure/phoenix/issues/42)) |
 
 ### Games and apps
 

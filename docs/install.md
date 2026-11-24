@@ -95,8 +95,9 @@ its DSPs, video codec and wireless chip. The image holds none of them, only link
 
 `boot` holds Valve's kernel, its device tree and a command line, no ramdisk. The command line adds
 `root=PARTLABEL=super rootfstype=ext4 rootwait=20 ro init=/usr/libexec/pico4/preinit pico4.root=installed
-pico4.autoreboot=0` to the kernel's own words (`clk_ignore_unused`, `pd_ignore_unused`,
-`regulator_ignore_unused`, `panic=5`). The kernel mounts `super` read-only as the root, mounts devtmpfs on
+pico4.autoreboot=0 msm.dpu_use_planar_cac=0` to the kernel's own words (`clk_ignore_unused`, `pd_ignore_unused`,
+`regulator_ignore_unused`, `panic=5`); the last leaves the display pipes to a monitor on the USB-C port
+([kernel.md](kernel.md#display)). The kernel mounts `super` read-only as the root, mounts devtmpfs on
 `/dev` and starts preinit, a bash script in the image:
 
 1. It mounts proc, sysfs and `/run`, and starts the boot indication (not in charger mode). It sets every CPU's

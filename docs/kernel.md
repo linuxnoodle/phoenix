@@ -106,7 +106,9 @@ check` takes the record whose kernel release runs.
 | Backlight in standby | SteamVR's standby keeps the panels on with black frames, so `driver_monado` writes the `pico4-panel` backlight's `bl_power` (the panels' enable line, GPIO 29) on `VREvent_EnterStandbyMode` and `VREvent_LeaveStandbyMode`; raising it, the driver resends the panels' power-on commands over the running video. A boot's panels stay dark after their first power-on until such a resend (why is not known), so the driver resends once 300 ms after it: the boot indication shows from about 5 s after the kernel starts. The GD32's `SetBrightness` is acked but changes nothing. Worn: dark without glow in standby, back at once without flicker |
 | Wi-Fi after a reboot | a saved network reconnects by itself within a minute. A DHCP attempt can run its 45 s without a lease; NetworkManager then retries 0.1 s later and connects (iwd's own autoconnect stays offline) |
 | USB-C charging | PM8150B's Type-C block and PD PHY as a sink (the kernel commits “usb: typec: qcom: pdphy: program PM8150B's charger for a PD contract” and the port in the device tree). For a contract the PD PHY programs the charger as the stock kernel's smb5 does: the voltage allowance in the policy engine's order (5 V forced at the start, the range on TCPM's sink standby, the new voltage once the source is ready), the input limit in high-current mode, the buck at the boot loader's 1050 kHz up to 11 V, BC1.2 detection off above 5 V; at a detach it writes back the seven registers it changed. Contracts start at 5 V and go to 9 V once the input is current-limited, as on PICO OS, never above 9 V; while charging it follows PICO OS's temperature control ([cooling.md](cooling.md#hardware-limits)). `pm8150b_charger_control` (on) leaves the charger alone for tests. A 5/9/15/20 V charger: 5 V, then 9 V/3 A about 8 s after the attach, up to 17 W idle; plugged in at boot, negotiated 2.4 s into the boot; PC ports keep their limits ([development.md](development.md#power-while-tethered)) |
-| Not implemented | speaker protection (voltage and current sense); the charger's configuration beyond its input (the charge current is the boot loader's) |
+| USB-C host and docks | the port has the dual data role, as stock's drd controller: device to a computer (the USB gadget), host after a data role swap, which docks ask for; dwc3 follows it through its role switch, the QMP PHY takes the plug's orientation. The power role stays sink. A dock with a charger: PD at 9 V, USB 2 and USB 3 (5 Gbit/s) in both orientations, its Ethernet (AX88179) as CDC NCM; back on a computer the gadget binds again by itself |
+| DisplayPort over USB-C | as a DFP the port enters a partner's DP alt mode (pin assignments C, D and E): two lanes into the QMP PHY, the AUX channel through stock's GPIO switch (enable GPIO 50) and the FSA4480 on QUP SE15 (enable GPIO 70), which turns the SBU lines for the plug's orientation; the HPD bridge on the Type-C connector. A dock's HDMI: pin assignment D, HBR2 on two lanes, the EDID and a picture beside the running session in both orientations, while the dock charges and its USB 3 runs. A plug turned under an active DP waits in the PHY until DP is off (“phy: qcom: qmp-combo: hold the orientation switch while DP is powered”). Nothing drives the monitor yet ([display](#display)) |
+| Not implemented | speaker protection (voltage and current sense); the charger's configuration beyond its input (the charge current is the boot loader's); the port as a power source for a device on its own (OTG) |
 
 ## Display
 
@@ -128,6 +130,13 @@ and backlight enable (GPIO 29).
   (hard lockup); the tree uses 1.896 V. One invalid regulator node fails the whole PMIC's set.
 - The panels' command sequences come from the stock board overlay, as `pico4,on-command` and `pico4,off-command`
   in the tree's `sm8250-pico4-phoenix-panel.dtsi`; the driver sends each with its stock data type to both links.
+
+A monitor on the USB-C port is a second display: the DP connector, beside the panels' DSI one, on its own CRTC. Its
+plane needs a display pipe (SSPP) of its own. Valve's planar CAC, the hardware's chromatic aberration correction for
+the Frame's panels, reserves six of the eight at boot, and the panels' plane takes the other two; nothing on the PICO 4
+uses it (SteamVR corrects in its shader), so the installed system's command line has `msm.dpu_use_planar_cac=0`. The
+Frame itself has no video on its USB-C port (USB 2.0, its DP controller off), so its session never drives a monitor;
+neither does the PICO 4's yet.
 
 The RGB camera's mode is PICO's data too, and not part of the kernel: `imx471_mode.py` takes it from
 `/lib64/camera/com.qti.sensormodule.sunny_imx471.bin` in the stock vendor image: the `regSetting` list of 2328x1748 at
@@ -229,7 +238,7 @@ per layer, each taking its changes from the one below it; each commit says why i
 
 | Layer | What |
 | --- | --- |
-| `common/7.2` | fixes any headset on Valve's tree can meet: DDR information, the root's identity after the ABL's overlay, BCL, writebacks, Bluetooth's firmware wait, the DSPs' handover, FastRPC, the unaligned atomic fixup, GPU page faults, the DSP's PCM format, the deferred split shrinker, PSCI's reset, the WCD codec's interrupts; and the CI |
+| `common/7.2` | fixes any headset on Valve's tree can meet: DDR information, the root's identity after the ABL's overlay, BCL, writebacks, Bluetooth's firmware wait, the DSPs' handover, FastRPC, the unaligned atomic fixup, GPU page faults, the DSP's PCM format, the deferred split shrinker, PSCI's reset, the WCD codec's interrupts, DisplayPort over a Qualcomm USB-C port (the Type-C driver's HPD bridge, the QMP combo PHY's orientation switch while DP runs, the DSI writeback hack on DSI encoders only); and the CI |
 | `sm8250/7.2` | the SM8250's blocks: Venus, CAMSS (PHY settings, start of frame, the RGB camera's path, 16-bit samples), preemption on the A650, refresh changes on DPU 6.0, PM8150B's charger for PD contracts (the PD PHY, the OTG booster, the Type-C port's settled state) and TCPM's capability-set selection |
 | `phoenix/7.2` | the PICO 4: its panel, battery, tracking and RGB camera drivers, audio as the stock kernel runs it, the device tree, `pico4.config` and its driver tests (`tools/testing/overpressure/phoenix/`) |
 
