@@ -433,6 +433,27 @@ remapping["layouts"] = [l for l in remapping["layouts"]
 with open(path, "w") as f:
     json.dump(remapping, f, indent=2)
 EOF
+# SteamVR's English keyboard has no underscore: its shift plane repeats the number row, and its symbols
+# plane has two tildes (docs/session.md#first-run-setup). The underscore takes the second tilde's
+# place; a layout of Valve's that has an underscore stays as it is.
+python3 - "$T/opt/steamvr/resources/webinterface/dashboard/keyboards/layout_english_overlay.json" <<'EOF'
+import json, sys
+path = sys.argv[1]
+layout = json.load(open(path, encoding="utf-8"))
+rows = [row for plane in layout["shiftPlanes"] for row in plane["rows"]]
+keys = [key for row in rows for key in row]
+tilde = [i for i, key in enumerate(keys) if key == "~"]
+if "_" not in keys and len(tilde) == 2:
+    last = tilde[1]
+    for row in rows:
+        if last < len(row):
+            row[last] = "_"
+            break
+        last -= len(row)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(layout, f, ensure_ascii=False, indent="\t")
+        f.write("\n")
+EOF
 # PICO OS's files are not in the image (docs/install.md#pico-oss-files): links point to where they
 # are on the headset (userspace/stock-links.txt), the data partition's copy that the install writes
 # from the headset's own backup (/var/lib/pico4-stock) and PICO OS's modem, dsp and bluetooth

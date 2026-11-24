@@ -282,7 +282,12 @@ the session (`wait-first-run --pending`). During the setup:
   `keyboard_vrwebui/main`, which the system UI sends only while its dashboard is fully visible; without it
   "Rejecting ShowKeyboard call because no keyboard implementation exists". The setup sends that message
   itself. At its first showing the keyboard loads its layout and passes no key ("render layout==null"),
-  so the setup shows it once, 2 s after starting it, for 2 s.
+  so the setup shows it once, 2 s after starting it, for 2 s. SteamVR's English layout
+  (`layout_english_overlay.json`) has no underscore on any of its three planes: its shift plane repeats
+  the number row and its symbols plane has two tildes, so an underscore can be typed nowhere the keyboard
+  is shown. The image build puts the underscore in the second tilde's place
+  ([build-userspace.sh](../scripts/build-userspace.sh)); a layout of Valve's that has an underscore
+  stays as it is.
 - **Room view on** (the compositor's `set_camera_roomview_enabled`, [xr.md](xr.md#passthrough)); the dark
   room shows only while the cameras have no image. The system UI sets the room view as it starts, so the
   setup waits for its overlay (`system.systemui`) and 5 s more for its mailboxes.
