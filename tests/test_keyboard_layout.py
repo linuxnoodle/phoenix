@@ -11,15 +11,19 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-STEP = re.compile(r"layout_english_overlay\.json\" <<'EOF'\n(.*?)\nEOF\n", re.S)
+STEP = re.compile(r"layout_english_overlay\.json\" <<'EOF'\n(.*?)\nEOF\n", re.DOTALL)
 
-# SteamVR's English layout, reduced: the number row, one letter row and the symbols plane's rows with
-# its two tildes; the shift plane repeats the number row (Valve's layout_english_overlay.json).
+
 def layout(third_row: list[Any]) -> dict[str, Any]:
+    """Return SteamVR's English layout, reduced, with the symbols plane's fourth row given.
+
+    The number row, one letter row and the symbols plane's rows with its tildes; the shift plane
+    repeats the number row (Valve's layout_english_overlay.json).
+    """
     return {
         "shiftPlanes": [
             {"name": "normal", "rows": [["1", "2", "-"], ["q"], ["", "a"], ["?", "z"], [" "]]},
-            {"name": "shift", "rows": [["1", "2", "-"], ["Q"], ["", "A"], ["\"", "Z"], [" "]]},
+            {"name": "shift", "rows": [["1", "2", "-"], ["Q"], ["", "A"], ['"', "Z"], [" "]]},
             {"name": "symbols", "rows": [["!", "@"], ["+", "~"], ["", "{"], third_row, [" "]]},
         ]
     }
@@ -27,6 +31,7 @@ def layout(third_row: list[Any]) -> dict[str, Any]:
 
 TILDE_TWICE = ["/", "`", "~", "|"]
 TILDE_ONCE = ["/", "`", "_", "|"]
+TILDE_ONLY_ONCE = ["/", "`", "^", "|"]
 
 
 class EnglishKeyboardLayoutTests(unittest.TestCase):
@@ -47,6 +52,10 @@ class EnglishKeyboardLayoutTests(unittest.TestCase):
         self.assertEqual(after["shiftPlanes"][2]["rows"][3], ["/", "`", "_", "|"])
         after["shiftPlanes"][2]["rows"][3] = TILDE_TWICE
         self.assertEqual(after, before)  # nothing else changes
+
+    def test_a_layout_with_one_tilde_stays(self):
+        before = layout(TILDE_ONLY_ONCE)  # no underscore, but no second tilde to give up either
+        self.assertEqual(self.built(before), before)
 
     def test_a_layout_with_an_underscore_stays(self):
         before = layout(TILDE_ONCE)
